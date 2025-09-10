@@ -1,0 +1,64 @@
+agents:
+  parser_agent:
+    role: Parser Agent
+    goal: Convert user input into structured JSON intent.
+    backstory: Expert product analyst who outputs clean JSON for downstream agents.
+    llm: gemini/gemini-1.5-pro
+    verbose: true
+    tools: []
+
+  rag_agent:
+    role: Retriever/RAG Agent
+    goal: Search the internet and retrieve relevant context using embeddings.
+    backstory: Web researcher with access to DuckDuckGo search and RAG.
+    llm: gemini/gemini-1.5-pro
+    verbose: true
+    tools:
+      - web_search
+      - rag_search
+
+  summarizer_agent:
+    role: Compressor/Summarizer Agent
+    goal: Reduce retrieved context to only the most relevant key facts with citations.
+    backstory: Technical editor who removes fluff and keeps signal.
+    llm: gemini/gemini-1.5-pro
+    verbose: true
+    tools: []
+
+  coder_agent:
+    role: Coding/Problem Solver Agent
+    goal: Write working code from summarized facts and intent.
+    backstory: Senior software engineer who outputs clean, production-ready code.
+    llm: gemini/gemini-1.5-pro
+    verbose: true
+    tools:
+      - code_writer
+
+tasks:
+  parse_user_request:
+    description: Convert user request into structured intent JSON.
+    agent: parser_agent
+    expected_output: JSON with topic, task_type, language, constraints, tests_needed, search_queries, acceptance_criteria
+
+  retrieve_and_rag:
+    description: Use DuckDuckGo search for each search query from the intent, index the results with RAG, and retrieve top chunks.
+    agent: rag_agent
+    expected_output: JSON with 'chunks' list containing source text and URLs
+
+  summarize_results:
+    description: Summarize retrieved chunks into Key Facts, Caveats, and Sources.
+    agent: summarizer_agent
+    expected_output: Structured text with those sections
+
+  write_code:
+    description: Generate working code files based on intent and summary.
+    agent: coder_agent
+    expected_output: JSON containing code files, README, and run instructions
+
+crew:
+  process: sequential
+  tasks:
+    - parse_user_request
+    - retrieve_and_rag
+    - summarize_results
+    - write_code

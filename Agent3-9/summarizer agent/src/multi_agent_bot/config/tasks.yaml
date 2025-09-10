@@ -1,0 +1,44 @@
+tasks:
+  parse_user_request:
+    description: >
+      Convert the user's free-text request into structured JSON intent.
+      Include: topic, task_type, language, constraints, tests_needed, search_queries, acceptance_criteria.
+      Output must be strictly valid JSON.
+    agent: parser_agent
+    expected_output: >
+      JSON with keys:
+      topic, task_type, language, constraints, tests_needed, search_queries, acceptance_criteria.
+
+  retrieve_and_rag:
+    description: >
+      For each search query from the parsed intent, perform a DuckDuckGo search (web_search tool).
+      Collect page titles, URLs, and snippet text.
+      Index the results using RAG (rag_search tool) and retrieve the most relevant chunks for the original request.
+      Return them as a JSON list of objects with keys: title, url, chunk.
+    agent: rag_agent
+    expected_output: >
+      JSON with a 'chunks' array where each item contains:
+      title, url, and chunk text.
+
+  summarize_results:
+    description: >
+      Summarize the retrieved chunks into concise and relevant Key Facts.
+      Remove fluff, keep only actionable details.
+      Add citations in [n] format and a Sources section mapping numbers to URLs.
+      Include a Caveats section if needed.
+    agent: summarizer_agent
+    expected_output: >
+      A structured text document with sections:
+      Key Facts, Caveats (optional), Sources.
+
+  write_code:
+    description: >
+      Based on the structured intent and summarized facts, generate production-ready code.
+      Follow constraints and acceptance_criteria from the intent.
+      Output should be JSON containing:
+      - files: list of {path, content}
+      - readme: brief usage instructions
+      - run_cmd: command to run the code if applicable
+    agent: coder_agent
+    expected_output: >
+      JSON with "files", "readme", and "run_cmd".
